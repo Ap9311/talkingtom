@@ -1,6 +1,6 @@
 {
   "name": "Tom AI - Intelligent 3D Companion",
-  "description": "An emotionally intelligent, friendly 3D conversational companion inspired by Talking Tom, featuring expressive facial animations, voice chat with pitch modulation, and empathetic responses powered by Gemini.",
+  "description": "An interactive 3D companion game inspired by Talking Tom, featuring real-time 3D facial expressions, touch petting and care actions, voice modulation, and spoken dialogue powered by Gemini.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

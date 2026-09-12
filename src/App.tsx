@@ -1,33 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar3D } from './components/Avatar3D';
 import { EnvironmentView } from './components/EnvironmentView';
 import { InteractionBar } from './components/InteractionBar';
-import { SpeechBubble } from './components/SpeechBubble';
-import { VoiceSettingsModal } from './components/VoiceSettingsModal';
-import { ChatHistoryDrawer } from './components/ChatHistoryDrawer';
 import { audioEngine } from './utils/audioEngine';
-import { EmotionType, ChatMessage, VoiceSettings, EnvironmentTheme, CharacterAction } from './types';
+import { EmotionType, VoiceSettings, EnvironmentTheme } from './types';
+import { Volume2, VolumeX } from 'lucide-react';
 
 export default function App() {
   const [emotion, setEmotion] = useState<EmotionType>('happy');
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isThinking, setIsThinking] = useState<boolean>(false);
-  const [currentDialogue, setCurrentDialogue] = useState<string>(
-    "Hi there! I'm Tom, your companion from New Era Global School. How are you feeling today? Share whatever is on your mind—I'm here to listen and learn with you!"
-  );
   const [inputText, setInputText] = useState<string>('');
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'initial',
-      sender: 'tom',
-      text: "Hi there! I'm Tom, your companion from New Era Global School. How are you feeling today? Share whatever is on your mind—I'm here to listen and learn with you!",
-      emotion: 'happy',
-      timestamp: Date.now(),
-    },
-  ]);
 
-  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
+  // Lightweight conversation history for AI context memory without any text chat display
+  const conversationHistoryRef = useRef<{ sender: string; text: string }[]>([]);
+
+  const [voiceSettings] = useState<VoiceSettings>({
     pitch: 1.12,
     rate: 1.02,
     voiceName: '',
@@ -35,40 +24,47 @@ export default function App() {
     autoSpeak: true,
   });
 
-  const [environmentTheme, setEnvironmentTheme] = useState<EnvironmentTheme>('negs-official');
+  const [environmentTheme] = useState<EnvironmentTheme>('negs-official');
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [isEmotionBusy, setIsEmotionBusy] = useState<boolean>(false);
 
-  // Play voice speech helper
+  // Play voice speech helper - strictly suppresses speech if avatar is in blushing/angry emotional state
   const speakText = useCallback(
     (text: string) => {
-      if (soundMuted || !voiceSettings.autoSpeak) return;
+      if (soundMuted || !voiceSettings.autoSpeak || isEmotionBusy) return;
       audioEngine.speak(text, voiceSettings, {
         onStart: () => setIsSpeaking(true),
         onEnd: () => setIsSpeaking(false),
         onError: () => setIsSpeaking(false),
       });
     },
-    [soundMuted, voiceSettings]
+    [soundMuted, voiceSettings, isEmotionBusy]
   );
+
+  // Callback when avatar enters/leaves busy emotion state (blush / angry)
+  const handleEmotionBusy = useCallback((busy: boolean) => {
+    setIsEmotionBusy(busy);
+    if (busy) {
+      audioEngine.stopSpeaking();
+      audioEngine.stopSpeechRecognition();
+      setIsSpeaking(false);
+      setIsListening(false);
+    }
+  }, []);
 
   // Submit chat message to server-side Gemini API
   const handleSendMessage = async (customText?: string) => {
     const textToSend = (customText || inputText).trim();
-    if (!textToSend || isThinking || isSpeaking) return;
+    if (!textToSend || isThinking || isSpeaking || isEmotionBusy) return;
 
     audioEngine.initAudioContext();
     setInputText('');
 
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}-user`,
-      sender: 'user',
-      text: textToSend,
-      timestamp: Date.now(),
-    };
+    conversationHistoryRef.current.push({ sender: 'user', text: textToSend });
+    if (conversationHistoryRef.current.length > 6) {
+      conversationHistoryRef.current = conversationHistoryRef.current.slice(-6);
+    }
 
-    setMessages((prev) => [...prev, userMsg]);
     setIsThinking(true);
     setEmotion('thinking');
 
@@ -78,7 +74,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: textToSend,
-          history: messages.slice(-6),
+          history: conversationHistoryRef.current,
         }),
       });
 
@@ -88,26 +84,16 @@ export default function App() {
 
       const data = await res.json();
       const replyText = data.cleanReply || data.fallbackReply || "I'm right here with you, my friend.";
-      const newEmotion: EmotionType = (data.emotion as EmotionType) || 'empathetic';
+      const newEmotion: EmotionType = (data.emotion as EmotionType) || 'happy';
 
-      setCurrentDialogue(replyText);
       setEmotion(newEmotion);
-
-      const tomMsg: ChatMessage = {
-        id: `msg-${Date.now()}-tom`,
-        sender: 'tom',
-        text: replyText,
-        emotion: newEmotion,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, tomMsg]);
+      conversationHistoryRef.current.push({ sender: 'tom', text: replyText });
 
       // Speak with modulated voice
       speakText(replyText);
     } catch (err) {
       console.warn('Chat error:', err);
       const fallback = "I'm right here beside you. Whenever you want to chat, I'm all ears!";
-      setCurrentDialogue(fallback);
       setEmotion('comforting');
       speakText(fallback);
     } finally {
@@ -117,6 +103,7 @@ export default function App() {
 
   // Toggle voice recognition (Speech-to-Text)
   const handleToggleMic = () => {
+    if (isEmotionBusy) return;
     audioEngine.initAudioContext();
     if (isListening) {
       audioEngine.stopSpeechRecognition();
@@ -148,66 +135,9 @@ export default function App() {
     }
   };
 
-  // Handle character care actions (Pet, Scratch, Treat, High Five, Sing)
-  const handleTriggerAction = async (action: CharacterAction) => {
-    audioEngine.initAudioContext();
-    audioEngine.stopSpeaking();
-
-    // Sound effect
-    if (action === 'pet_head' || action === 'scratch_chin') {
-      audioEngine.startPurring();
-      setTimeout(() => audioEngine.stopPurring(), 2500);
-    } else if (action === 'give_treat') {
-      audioEngine.playChime('treat');
-    } else if (action === 'high_five') {
-      audioEngine.playChime('high_five');
-    } else if (action === 'sing_song') {
-      audioEngine.playGreetingMeow();
-    }
-
-    try {
-      const res = await fetch('/api/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
-
-      const dialogue = data.cleanReply;
-      const actEmotion = (data.emotion as EmotionType) || 'happy';
-
-      setCurrentDialogue(dialogue);
-      setEmotion(actEmotion);
-
-      const tomMsg: ChatMessage = {
-        id: `msg-${Date.now()}-action`,
-        sender: 'tom',
-        text: dialogue,
-        emotion: actEmotion,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, tomMsg]);
-
-      speakText(dialogue);
-    } catch (e) {
-      console.warn('Action err:', e);
-    }
-  };
-
-  // Direct 3D pet on canvas
-  const handlePetOnAvatar = (zone: 'head' | 'chin') => {
-    if (isSpeaking || isThinking) return;
-    setEmotion(zone === 'chin' ? 'comforting' : 'happy');
-    setCurrentDialogue(
-      zone === 'chin'
-        ? "*Purrrr*... Ahhh, you found my favorite scratching spot! That brings so much peace."
-        : "*Purrrr*... That feels so comforting! Thank you for being such a kind friend."
-    );
-  };
-
-  // Test voice sample
-  const handleTestVoice = () => {
-    speakText("Hello! This is my modulated companion voice. I'm ready to learn, laugh, and explore with you!");
+  // Direct 3D touch on canvas - audio purring handled natively without speaking
+  const handlePetOnAvatar = (_zone: 'head' | 'chin') => {
+    // No verbal speech on touch
   };
 
   // Stop speech when unmounting or switching
@@ -220,38 +150,59 @@ export default function App() {
   }, []);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-slate-100 flex flex-col justify-between font-sans">
-      {/* 1. Background Environment (NEGS Official, Campus Lounge, or Studio) */}
+    <main className="fixed inset-0 w-full h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-100 flex flex-col justify-between font-sans select-none">
+      {/* 1. Background Environment */}
       <EnvironmentView theme={environmentTheme} blur={false} />
 
-      {/* 2. Top Header with Centered Facial Expression / Speech Cloud */}
-      <header className="relative z-20 w-full pt-3 sm:pt-4 px-4 flex flex-col items-center">
-        <SpeechBubble
-          text={currentDialogue}
-          emotion={emotion}
-          isSpeaking={isSpeaking}
-          isThinking={isThinking}
-          isListening={isListening}
-          onReplay={() => speakText(currentDialogue)}
-        />
+      {/* 2. Top Header with School Logo & Sound Toggle */}
+      <header className="relative z-20 w-full pt-2 sm:pt-3 px-2 sm:px-4 flex items-center justify-between shrink-0">
+        <div className="w-full max-w-xl mx-auto flex items-center justify-between px-1">
+          {/* School Brand Badge with Logo */}
+          <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl shadow-2xs border border-slate-200/80">
+            <img
+              src="/negs-logo.svg"
+              alt="New Era Global School Logo"
+              className="h-7 sm:h-8 md:h-9 w-auto max-w-[170px] sm:max-w-[240px] object-contain"
+              referrerPolicy="no-referrer"
+            />
+            <span className="hidden md:inline text-xs font-semibold text-slate-600 border-l border-slate-200 pl-2.5">
+              Curiosity • Creativity • Compassion
+            </span>
+          </div>
+
+          {/* Quick Sound Mute Toggle */}
+          <div className="flex items-center bg-white/90 backdrop-blur-md p-1 rounded-xl shadow-2xs border border-slate-200/80">
+            <button
+              onClick={() => {
+                if (!soundMuted) audioEngine.stopSpeaking();
+                setSoundMuted(!soundMuted);
+              }}
+              title={soundMuted ? 'Unmute sound' : 'Mute sound'}
+              aria-label={soundMuted ? 'Unmute sound' : 'Mute sound'}
+              className="p-1.5 text-slate-600 hover:text-amber-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              {soundMuted ? <VolumeX className="w-4 h-4 text-red-500" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
       </header>
 
-      {/* 3. Central 3D Interactive Avatar Stage */}
-      <section className="relative flex-1 w-full flex items-center justify-center min-h-0 z-10">
+      {/* 3. Central 3D Interactive Talking Avatar Stage */}
+      <section className="relative flex-1 w-full min-h-0 flex items-center justify-center z-10 overflow-hidden">
         <Avatar3D
           emotion={emotion}
           isSpeaking={isSpeaking}
           isListening={isListening}
           isThinking={isThinking}
           onPet={handlePetOnAvatar}
-          className="w-full h-full max-w-4xl"
+          onEmotionBusy={handleEmotionBusy}
+          className="w-full h-full"
         />
       </section>
 
-      {/* 4. Bottom Modern Floating Interaction Bar */}
-      <footer className="relative z-30 w-full">
+      {/* 4. Bottom Chatting Bar */}
+      <footer className="relative z-30 w-full shrink-0">
         <InteractionBar
-          emotion={emotion}
           isListening={isListening}
           isSpeaking={isSpeaking}
           isThinking={isThinking}
@@ -259,37 +210,9 @@ export default function App() {
           onInputChange={setInputText}
           onSubmitMessage={handleSendMessage}
           onToggleMic={handleToggleMic}
-          onTriggerAction={handleTriggerAction}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          onOpenHistory={() => setIsHistoryOpen(true)}
-          soundMuted={soundMuted}
-          onToggleMute={() => {
-            if (!soundMuted) audioEngine.stopSpeaking();
-            setSoundMuted(!soundMuted);
-          }}
           disabled={isThinking}
         />
       </footer>
-
-      {/* 5. Voice & Backdrop Settings Modal */}
-      <VoiceSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={voiceSettings}
-        onUpdateSettings={(newSettings) => setVoiceSettings((prev) => ({ ...prev, ...newSettings }))}
-        currentTheme={environmentTheme}
-        onChangeTheme={setEnvironmentTheme}
-        onTestVoice={handleTestVoice}
-      />
-
-      {/* 6. Conversation Log / History Drawer */}
-      <ChatHistoryDrawer
-        isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-        messages={messages}
-        onClear={() => setMessages([])}
-        onReplay={(text) => speakText(text)}
-      />
     </main>
   );
 }
