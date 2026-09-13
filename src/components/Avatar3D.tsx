@@ -13,8 +13,16 @@ interface Avatar3DProps {
   className?: string;
 }
 
-// Procedural texture generators for photorealistic & cute feline details
+// Procedural texture cache for zero regeneration time and instant frame rendering
+let cachedEyeTexture: THREE.CanvasTexture | null = null;
+let cachedTongueTexture: THREE.CanvasTexture | null = null;
+let cachedNoseTexture: THREE.CanvasTexture | null = null;
+let cachedBlushTexture: THREE.CanvasTexture | null = null;
+let cachedDarkSmokeTexture: THREE.CanvasTexture | null = null;
+let cachedAngerMarkTexture: THREE.CanvasTexture | null = null;
+
 function generateEyeTexture(): THREE.CanvasTexture {
+  if (cachedEyeTexture) return cachedEyeTexture;
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 512;
@@ -64,10 +72,12 @@ function generateEyeTexture(): THREE.CanvasTexture {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  cachedEyeTexture = texture;
   return texture;
 }
 
 function generateTongueTexture(): THREE.CanvasTexture {
+  if (cachedTongueTexture) return cachedTongueTexture;
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 256;
@@ -102,10 +112,12 @@ function generateTongueTexture(): THREE.CanvasTexture {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  cachedTongueTexture = texture;
   return texture;
 }
 
 function generateNoseTexture(): THREE.CanvasTexture {
+  if (cachedNoseTexture) return cachedNoseTexture;
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 256;
@@ -126,10 +138,12 @@ function generateNoseTexture(): THREE.CanvasTexture {
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  cachedNoseTexture = texture;
   return texture;
 }
 
 function generateBlushTexture(): THREE.CanvasTexture {
+  if (cachedBlushTexture) return cachedBlushTexture;
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 128;
@@ -145,38 +159,50 @@ function generateBlushTexture(): THREE.CanvasTexture {
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  cachedBlushTexture = texture;
   return texture;
 }
 
-function generateSteamTexture(): THREE.CanvasTexture {
+function generateDarkSmokeTexture(): THREE.CanvasTexture {
+  if (cachedDarkSmokeTexture) return cachedDarkSmokeTexture;
   const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
+  canvas.width = 256;
+  canvas.height = 256;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    ctx.clearRect(0, 0, 128, 128);
-    const drawPuff = (x: number, y: number, r: number) => {
-      const grad = ctx.createRadialGradient(x, y, 2, x, y, r);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-      grad.addColorStop(0.45, 'rgba(240, 246, 255, 0.72)');
-      grad.addColorStop(0.8, 'rgba(220, 232, 250, 0.28)');
-      grad.addColorStop(1, 'rgba(215, 228, 248, 0)');
+    ctx.clearRect(0, 0, 256, 256);
+    const drawDarkPuff = (x: number, y: number, r: number, alpha: number) => {
+      const grad = ctx.createRadialGradient(x, y, r * 0.1, x, y, r);
+      // Dark charcoal soot core to dark slate edge
+      grad.addColorStop(0, `rgba(18, 22, 28, ${alpha * 0.98})`);
+      grad.addColorStop(0.35, `rgba(30, 36, 46, ${alpha * 0.94})`);
+      grad.addColorStop(0.7, `rgba(51, 65, 85, ${alpha * 0.72})`);
+      grad.addColorStop(0.9, `rgba(71, 85, 105, ${alpha * 0.35})`);
+      grad.addColorStop(1, 'rgba(71, 85, 105, 0)');
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
     };
-    drawPuff(64, 76, 36);
-    drawPuff(44, 52, 26);
-    drawPuff(84, 52, 26);
-    drawPuff(64, 38, 30);
+
+    // Dark billowing cartoon comic cloud cluster with deep charcoal shading
+    drawDarkPuff(128, 145, 78, 0.96);
+    drawDarkPuff(82, 110, 58, 0.92);
+    drawDarkPuff(174, 110, 58, 0.92);
+    drawDarkPuff(128, 75, 66, 0.94);
+    drawDarkPuff(65, 155, 45, 0.88);
+    drawDarkPuff(190, 155, 45, 0.88);
+    drawDarkPuff(100, 175, 38, 0.85);
+    drawDarkPuff(155, 175, 38, 0.85);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  cachedDarkSmokeTexture = texture;
   return texture;
 }
 
 function generateAngerMarkTexture(): THREE.CanvasTexture {
+  if (cachedAngerMarkTexture) return cachedAngerMarkTexture;
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 128;
@@ -222,6 +248,7 @@ function generateAngerMarkTexture(): THREE.CanvasTexture {
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  cachedAngerMarkTexture = texture;
   return texture;
 }
 
@@ -276,6 +303,8 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
   const rightBlushRef = useRef<THREE.Mesh | null>(null);
   const leftSteamRef = useRef<THREE.Mesh | null>(null);
   const rightSteamRef = useRef<THREE.Mesh | null>(null);
+  const centerSmokeRef = useRef<THREE.Mesh | null>(null);
+  const faceSmokeRef = useRef<THREE.Mesh | null>(null);
   const angerMarkRef = useRef<THREE.Mesh | null>(null);
   const tailRef = useRef<THREE.Group | null>(null);
   const bodyRef = useRef<THREE.Group | null>(null);
@@ -292,6 +321,8 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
   const isAngry = useRef<boolean>(false);
   const smoothBlush = useRef<number>(0);
   const smoothAngry = useRef<number>(0);
+  const faceSmokeActiveRef = useRef<boolean>(false);
+  const faceSmokeProgress = useRef<number>(0);
   const emotionTimeoutRef = useRef<any>(null);
   const lastTapTimeRef = useRef<number>(0);
   const lastTapZoneRef = useRef<'stomach' | 'face' | null>(null);
@@ -306,6 +337,17 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
   const blinkPeak = useRef<number>(1.0);
   const mouthOpenAmount = useRef<number>(0);
   const pawBounce = useRef<number>(0);
+
+  // Free-time ambient idle tracking (meow-meow, looking around slowly, subtle ear twitches)
+  const idleTimer = useRef<number>(0);
+  const idleNextActionTime = useRef<number>(10.0);
+  const idleAction = useRef<'none' | 'look_left' | 'look_right' | 'meow' | 'ear_twitch' | 'gentle_yawn'>('none');
+  const idleProgress = useRef<number>(0);
+  const idleDuration = useRef<number>(2.4);
+  const idleHeadOffset = useRef<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 0 });
+  const idleEarTwitch = useRef<{ left: number; right: number }>({ left: 0, right: 0 });
+  const idleMouthOpen = useRef<number>(0);
+  const lastUserInteractionTime = useRef<number>(performance.now());
 
   useEffect(() => {
     const container = containerRef.current;
@@ -398,7 +440,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
     const tongueTexture = generateTongueTexture();
     const noseTexture = generateNoseTexture();
     const blushTexture = generateBlushTexture();
-    const steamTexture = generateSteamTexture();
+    const darkSmokeTexture = generateDarkSmokeTexture();
     const angerMarkTexture = generateAngerMarkTexture();
 
     // Main warm golden tabby fur
@@ -649,31 +691,61 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
     rightEarRef.current = rightEar;
     headGroup.add(rightEar);
 
-    // Cute Cartoon Steam Puffs above ears for Angry Animation
-    const steamGeom = new THREE.PlaneGeometry(0.42, 0.42);
+    // Dark Billowing Cartoon Smoke Puffs for hit animation
+    const smokeGeom = new THREE.PlaneGeometry(0.56, 0.56);
     const leftSteamMat = new THREE.MeshBasicMaterial({
-      map: steamTexture,
+      map: darkSmokeTexture,
       transparent: true,
       opacity: 0,
       depthWrite: false,
       side: THREE.DoubleSide,
+      color: 0x1e2430, // Extra dark charcoal tint
     });
-    const leftSteam = new THREE.Mesh(steamGeom, leftSteamMat);
-    leftSteam.position.set(-0.52, 0.98, 0.15);
+    const leftSteam = new THREE.Mesh(smokeGeom, leftSteamMat);
+    leftSteam.position.set(-0.52, 1.02, 0.15);
     headGroup.add(leftSteam);
     leftSteamRef.current = leftSteam;
 
     const rightSteamMat = new THREE.MeshBasicMaterial({
-      map: steamTexture,
+      map: darkSmokeTexture,
       transparent: true,
       opacity: 0,
       depthWrite: false,
       side: THREE.DoubleSide,
+      color: 0x1e2430, // Extra dark charcoal tint
     });
-    const rightSteam = new THREE.Mesh(steamGeom, rightSteamMat);
-    rightSteam.position.set(0.52, 0.98, 0.15);
+    const rightSteam = new THREE.Mesh(smokeGeom, rightSteamMat);
+    rightSteam.position.set(0.52, 1.02, 0.15);
     headGroup.add(rightSteam);
     rightSteamRef.current = rightSteam;
+
+    // Center dark billowing smoke cloud
+    const centerSmokeMat = new THREE.MeshBasicMaterial({
+      map: darkSmokeTexture,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      color: 0x111827, // Darkest slate soot
+    });
+    const centerSmoke = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.68), centerSmokeMat);
+    centerSmoke.position.set(0, 1.16, 0.08);
+    headGroup.add(centerSmoke);
+    centerSmokeRef.current = centerSmoke;
+
+    // Direct impact puff on the cat's face when double-tapped
+    const faceSmokeMat = new THREE.MeshBasicMaterial({
+      map: darkSmokeTexture,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      color: 0x0f172a, // Deep slate black
+    });
+    const faceSmoke = new THREE.Mesh(new THREE.PlaneGeometry(0.76, 0.76), faceSmokeMat);
+    faceSmoke.position.set(0, 0.26, 0.85);
+    headGroup.add(faceSmoke);
+    faceSmokeRef.current = faceSmoke;
 
     // Anime Anger Vein Mark (💢) above forehead
     const angerGeom = new THREE.PlaneGeometry(0.24, 0.24);
@@ -1019,12 +1091,23 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
     const raycaster = new THREE.Raycaster();
     let tapResetTimeout: any = null;
 
+    const resetIdleAction = () => {
+      idleAction.current = 'none';
+      idleProgress.current = 0;
+      idleHeadOffset.current = { x: 0, y: 0, z: 0 };
+      idleEarTwitch.current = { left: 0, right: 0 };
+      idleMouthOpen.current = 0;
+    };
+
     const triggerBlush = () => {
       isAngry.current = false;
       isBlushing.current = true;
       isPetting.current = false;
       clearTimeout(petTimeoutRef.current);
       clearTimeout(emotionTimeoutRef.current);
+
+      lastUserInteractionTime.current = performance.now();
+      resetIdleAction();
 
       // Stop any speech and voice recognition immediately: MUST NOT speak while blushing!
       audioEngine.stopSpeaking();
@@ -1033,7 +1116,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
 
       audioEngine.initAudioContext();
       audioEngine.startPurring();
-      audioEngine.playChime('sparkle');
+      audioEngine.playStomachLoveSound();
 
       emotionTimeoutRef.current = setTimeout(() => {
         isBlushing.current = false;
@@ -1042,26 +1125,35 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       }, 4200);
     };
 
-    const triggerAngry = () => {
+    const triggerHitFace = () => {
       isBlushing.current = false;
-      isAngry.current = true;
       isPetting.current = false;
       clearTimeout(petTimeoutRef.current);
       clearTimeout(emotionTimeoutRef.current);
 
-      // Stop any speech and voice recognition immediately: MUST NOT speak while angry!
+      lastUserInteractionTime.current = performance.now();
+      resetIdleAction();
+
+      // Trigger dark impact face smoke burst
+      faceSmokeActiveRef.current = true;
+      faceSmokeProgress.current = 0;
+
+      // Always stop ongoing speech immediately
       audioEngine.stopSpeaking();
       audioEngine.stopSpeechRecognition();
+
+      // Normal hit when idle or speaking: Tom gets grumpy with dark billowing smoke and hiss
+      isAngry.current = true;
       onEmotionBusyRef.current?.(true);
 
       audioEngine.initAudioContext();
       audioEngine.stopPurring();
-      audioEngine.playHiss();
+      audioEngine.playHitSound();
 
       emotionTimeoutRef.current = setTimeout(() => {
         isAngry.current = false;
         onEmotionBusyRef.current?.(false);
-      }, 4000);
+      }, 3400);
     };
 
     const detectZone = (x: number, y: number): 'face' | 'stomach' | null => {
@@ -1093,6 +1185,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
     };
 
     const handlePointerMove = (e: PointerEvent) => {
+      lastUserInteractionTime.current = performance.now();
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
@@ -1105,6 +1198,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       if (!e.isPrimary) return;
       if (e.button !== undefined && e.button !== 0) return;
 
+      lastUserInteractionTime.current = performance.now();
       audioEngine.initAudioContext();
 
       const rect = container.getBoundingClientRect();
@@ -1134,7 +1228,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
         if (hitZone === 'stomach') {
           triggerBlush();
         } else if (hitZone === 'face') {
-          triggerAngry();
+          triggerHitFace();
         }
       } else {
         // Single tap: Register candidate first tap and start reset timer.
@@ -1163,6 +1257,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
 
     const handleDoubleClick = (e: MouseEvent) => {
       if (e.button !== 0) return;
+      lastUserInteractionTime.current = performance.now();
       audioEngine.initAudioContext();
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1171,7 +1266,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       if (hitZone === 'stomach') {
         triggerBlush();
       } else if (hitZone === 'face') {
-        triggerAngry();
+        triggerHitFace();
       }
     };
 
@@ -1204,7 +1299,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       const currentIsListening = isListeningRef.current;
       const currentIsThinking = isThinkingRef.current;
 
-      // Smooth framerate-independent dampening for blush and angry animations
+      // Smooth framerate-independent dampening for blush, angry, and mistake animations
       const targetBlushVal = isBlushing.current ? 1.0 : 0.0;
       smoothBlush.current = THREE.MathUtils.damp(smoothBlush.current, targetBlushVal, 3.2, delta);
 
@@ -1214,6 +1309,118 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       // Absolutely DO NOT speak or mouth words when blushing or angry!
       const isEmotionSuppressed = smoothBlush.current > 0.05 || smoothAngry.current > 0.05;
       const currentIsSpeaking = !isEmotionSuppressed && isSpeakingRef.current;
+
+      // FREE-TIME IDLE ENGINE:
+      // In free time (when neither listening, speaking, thinking, nor in emotional reaction),
+      // Tom performs cute subtle actions: saying "Meow Meow...", looking around slowly, ear twitching, gentle stretching
+      const isFreeTime = !isSpeakingRef.current &&
+                         !isListeningRef.current &&
+                         !isThinkingRef.current &&
+                         !isBlushing.current &&
+                         !isAngry.current &&
+                         !isPetting.current;
+
+      if (isFreeTime) {
+        idleTimer.current += delta;
+
+        if (idleAction.current === 'none') {
+          if (idleTimer.current >= idleNextActionTime.current) {
+            idleProgress.current = 0;
+
+            // Only meow after at least 10 seconds of timepass / continuous free time!
+            const canMeow = idleTimer.current >= 10.0;
+            const roll = Math.random();
+
+            if (canMeow && roll < 0.65) {
+              // 1. Meow in authentic cat voice after 10+ seconds of timepass
+              idleAction.current = 'meow';
+              idleDuration.current = 1.4;
+              audioEngine.playKittenMeowMeow((mouthVal) => {
+                idleMouthOpen.current = mouthVal;
+              });
+              // Reset idle timer so the next meow again requires 10+ seconds of timepass
+              idleTimer.current = 0;
+              idleNextActionTime.current = 10.0 + Math.random() * 4.0;
+            } else {
+              // Subtle silent visual actions during or between timepass intervals
+              idleNextActionTime.current = idleTimer.current + (4.0 + Math.random() * 3.0);
+              const silentRoll = Math.random();
+              if (silentRoll < 0.35) {
+                // 2. Look around slowly to the left
+                idleAction.current = 'look_left';
+                idleDuration.current = 2.8;
+              } else if (silentRoll < 0.70) {
+                // 3. Look around slowly to the right
+                idleAction.current = 'look_right';
+                idleDuration.current = 2.8;
+              } else if (silentRoll < 0.88) {
+                // 4. Subtle ear twitch with curious head tilt
+                idleAction.current = 'ear_twitch';
+                idleDuration.current = 1.8;
+              } else {
+                // 5. Gentle stretch & tiny yawn
+                idleAction.current = 'gentle_yawn';
+                idleDuration.current = 2.4;
+              }
+            }
+          }
+        } else {
+          idleProgress.current += delta / Math.max(0.1, idleDuration.current);
+
+          if (idleProgress.current >= 1.0) {
+            resetIdleAction();
+          } else {
+            const p = idleProgress.current;
+            // Smooth bell-curve easing for smooth natural entry and return
+            const envelope = Math.sin(p * Math.PI);
+
+            switch (idleAction.current) {
+              case 'meow':
+                // Cute head bob and slight tilt during meow vocalization
+                idleHeadOffset.current.z = THREE.MathUtils.lerp(0, 0.12, envelope);
+                idleHeadOffset.current.x = THREE.MathUtils.lerp(0, -0.06 + Math.sin(p * Math.PI * 2) * 0.03, envelope);
+                idleEarTwitch.current.left = THREE.MathUtils.lerp(0, 0.18, envelope);
+                idleEarTwitch.current.right = THREE.MathUtils.lerp(0, 0.18, envelope);
+                break;
+
+              case 'look_left':
+                // Smoothly look around slowly to the left
+                idleHeadOffset.current.y = THREE.MathUtils.lerp(0, -0.38, envelope);
+                idleHeadOffset.current.x = THREE.MathUtils.lerp(0, -0.05, envelope);
+                idleHeadOffset.current.z = THREE.MathUtils.lerp(0, 0.08, envelope);
+                break;
+
+              case 'look_right':
+                // Smoothly look around slowly to the right and slightly up
+                idleHeadOffset.current.y = THREE.MathUtils.lerp(0, 0.36, envelope);
+                idleHeadOffset.current.x = THREE.MathUtils.lerp(0, -0.10, envelope);
+                idleHeadOffset.current.z = THREE.MathUtils.lerp(0, -0.06, envelope);
+                break;
+
+              case 'ear_twitch':
+                // Swift natural feline ear flicks
+                if (p < 0.45) {
+                  idleEarTwitch.current.left = Math.sin(p * 25) * 0.22;
+                } else if (p < 0.9) {
+                  idleEarTwitch.current.right = Math.sin((p - 0.45) * 25) * 0.22;
+                }
+                idleHeadOffset.current.z = THREE.MathUtils.lerp(0, 0.08, envelope);
+                break;
+
+              case 'gentle_yawn':
+                // Tiny contented head stretch and cute mouth yawn
+                idleHeadOffset.current.x = THREE.MathUtils.lerp(0, -0.14, envelope);
+                idleMouthOpen.current = THREE.MathUtils.lerp(0, 0.22, envelope);
+                break;
+            }
+          }
+        }
+      } else {
+        if (idleAction.current !== 'none') {
+          resetIdleAction();
+        }
+        idleTimer.current = 0;
+      }
 
       // Gentle organic breathing idle
       const breath = Math.sin(elapsed * 2.2) * 0.02;
@@ -1296,16 +1503,16 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
         }
       }
 
-      // Target head rotation from pointer position
-      let desiredHeadX = -pointerPos.current.y * 0.26;
-      let desiredHeadY = pointerPos.current.x * 0.36;
-      let desiredHeadZ = -pointerPos.current.x * 0.08;
+      // Target head rotation from pointer position + idle offsets
+      let desiredHeadX = -pointerPos.current.y * 0.26 + idleHeadOffset.current.x;
+      let desiredHeadY = pointerPos.current.x * 0.36 + idleHeadOffset.current.y;
+      let desiredHeadZ = -pointerPos.current.x * 0.08 + idleHeadOffset.current.z;
 
       // Emotion modifications
       let targetBrowTilt = 0;
       let targetBrowY = 0.44;
-      let targetEarL = 0;
-      let targetEarR = 0;
+      let targetEarL = idleEarTwitch.current.left;
+      let targetEarR = idleEarTwitch.current.right;
       let targetSquint = 0;
 
       if (isPetting.current && !isEmotionSuppressed) {
@@ -1424,24 +1631,55 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
         const blushOpacity = smoothBlush.current * 0.88;
         (leftBlushRef.current.material as THREE.MeshBasicMaterial).opacity = blushOpacity;
         (rightBlushRef.current.material as THREE.MeshBasicMaterial).opacity = blushOpacity;
-        const scale = 0.92 + smoothBlush.current * 0.14;
+        const scale = 0.92 + blushOpacity * 0.14;
         leftBlushRef.current.scale.set(scale, scale, 1);
         rightBlushRef.current.scale.set(scale, scale, 1);
       }
 
-      // Angry Cartoon Steam Puffs and Anger Vein Mark
-      if (leftSteamRef.current && rightSteamRef.current && angerMarkRef.current) {
-        const steamOpacity = smoothAngry.current * 0.92;
-        (leftSteamRef.current.material as THREE.MeshBasicMaterial).opacity = steamOpacity;
-        (rightSteamRef.current.material as THREE.MeshBasicMaterial).opacity = steamOpacity;
-        (angerMarkRef.current.material as THREE.MeshBasicMaterial).opacity = smoothAngry.current * 0.96;
+      // Dark Billowing Smoke Puffs and Anger animations
+      const activeSmokeAmount = smoothAngry.current;
+      if (leftSteamRef.current && rightSteamRef.current && centerSmokeRef.current) {
+        const smokeOpacity = activeSmokeAmount * 0.95;
+        (leftSteamRef.current.material as THREE.MeshBasicMaterial).opacity = smokeOpacity;
+        (rightSteamRef.current.material as THREE.MeshBasicMaterial).opacity = smokeOpacity;
+        (centerSmokeRef.current.material as THREE.MeshBasicMaterial).opacity = smokeOpacity * 0.92;
 
-        const steamPulse = 0.85 + 0.25 * smoothAngry.current + Math.sin(elapsed * 10) * 0.08;
-        leftSteamRef.current.scale.set(steamPulse, steamPulse, 1);
-        rightSteamRef.current.scale.set(steamPulse, steamPulse, 1);
-        leftSteamRef.current.position.y = 0.98 + smoothAngry.current * 0.08 + Math.sin(elapsed * 8) * 0.025;
-        rightSteamRef.current.position.y = 0.98 + smoothAngry.current * 0.08 + Math.sin(elapsed * 8 + 1) * 0.025;
+        const smokePulse = 0.88 + 0.32 * activeSmokeAmount + Math.sin(elapsed * 9) * 0.08;
+        leftSteamRef.current.scale.set(smokePulse, smokePulse, 1);
+        rightSteamRef.current.scale.set(smokePulse, smokePulse, 1);
+        centerSmokeRef.current.scale.set(smokePulse * 1.2, smokePulse * 1.2, 1);
 
+        // Billowing swirl rotation
+        leftSteamRef.current.rotation.z = Math.sin(elapsed * 4) * 0.15 - 0.12;
+        rightSteamRef.current.rotation.z = -Math.sin(elapsed * 4) * 0.15 + 0.12;
+        centerSmokeRef.current.rotation.z = Math.cos(elapsed * 3) * 0.22;
+
+        leftSteamRef.current.position.y = 1.02 + activeSmokeAmount * 0.1 + Math.sin(elapsed * 7) * 0.03;
+        rightSteamRef.current.position.y = 1.02 + activeSmokeAmount * 0.1 + Math.sin(elapsed * 7 + 1) * 0.03;
+        centerSmokeRef.current.position.y = 1.18 + activeSmokeAmount * 0.12 + Math.sin(elapsed * 6) * 0.04;
+      }
+
+      // Direct Face Impact Dark Smoke Puff (when double-tapped on face)
+      if (faceSmokeRef.current) {
+        if (faceSmokeActiveRef.current) {
+          faceSmokeProgress.current += delta * 1.6;
+          if (faceSmokeProgress.current >= 1.0) {
+            faceSmokeActiveRef.current = false;
+            (faceSmokeRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
+          } else {
+            const p = faceSmokeProgress.current;
+            const faceOpacity = (1 - p) * 0.95;
+            const faceScale = 0.5 + p * 0.9;
+            (faceSmokeRef.current.material as THREE.MeshBasicMaterial).opacity = faceOpacity;
+            faceSmokeRef.current.scale.set(faceScale, faceScale, 1);
+            faceSmokeRef.current.rotation.z = p * 1.4;
+          }
+        }
+      }
+
+      if (angerMarkRef.current) {
+        const markOpacity = smoothAngry.current * 0.96;
+        (angerMarkRef.current.material as THREE.MeshBasicMaterial).opacity = markOpacity;
         const markPulse = 0.92 + 0.22 * smoothAngry.current + Math.sin(elapsed * 14) * 0.12;
         angerMarkRef.current.scale.set(markPulse, markPulse, 1);
       }
@@ -1450,6 +1688,9 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       if (currentIsSpeaking) {
         const speechWave = Math.sin(elapsed * 15) * 0.5 + Math.sin(elapsed * 22) * 0.3 + 0.5;
         mouthOpenAmount.current = THREE.MathUtils.lerp(mouthOpenAmount.current, Math.max(0, speechWave) * 0.28, 0.25);
+      } else if (idleMouthOpen.current > 0.01) {
+        // Mouth opened by ambient idle action (saying "Meow Meow" or gentle yawn)
+        mouthOpenAmount.current = THREE.MathUtils.lerp(mouthOpenAmount.current, idleMouthOpen.current, 0.35);
       } else if (smoothAngry.current > 0.05) {
         // Grumpy tight snarl / pout
         mouthOpenAmount.current = THREE.MathUtils.lerp(mouthOpenAmount.current, 0.04 * smoothAngry.current, 0.2);
@@ -1504,7 +1745,7 @@ export const Avatar3D: React.FC<Avatar3DProps> = ({
       tongueTexture.dispose();
       noseTexture.dispose();
       blushTexture.dispose();
-      steamTexture.dispose();
+      darkSmokeTexture.dispose();
       angerMarkTexture.dispose();
       renderer.dispose();
     };

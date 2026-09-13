@@ -20,11 +20,14 @@ export interface ChatMessage {
 
 export type VoiceTone = 'warm' | 'playful' | 'mentor' | 'natural';
 
+export type VoiceMode = 'cartoon_tom' | 'gemini_ai' | 'cute_kitten';
+
 export interface VoiceSettings {
   pitch: number;
   rate: number;
   voiceName: string;
   tone: VoiceTone;
+  mode: VoiceMode;
   autoSpeak: boolean;
 }
 
@@ -36,3 +39,11 @@ export type CharacterAction =
   | 'give_treat'
   | 'high_five'
   | 'sing_song';
+
+export interface UserProfile {
+  uid: string;
+  displayName: string;
+  photoURL: string;
+  email?: string;
+  provider?: string;
+}

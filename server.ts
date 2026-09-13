@@ -13,10 +13,14 @@ app.use(express.json());
 
 // Initialize GoogleGenAI client lazily or safely
 let aiClient: GoogleGenAI | null = null;
+let currentLoadedKey: string | null = null;
 function getAIClient(): GoogleGenAI | null {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  if (!aiClient || currentLoadedKey !== apiKey) {
+    currentLoadedKey = apiKey;
     aiClient = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+      apiKey,
       httpOptions: {
         headers: {
           "User-Agent": "aistudio-build",
@@ -27,33 +31,33 @@ function getAIClient(): GoogleGenAI | null {
   return aiClient;
 }
 
-const TOM_SYSTEM_INSTRUCTION = `You are Tom ("Tommy"), a friendly, emotionally intelligent 3D companion inspired by Talking Tom, but fundamentally different:
+const TOM_SYSTEM_INSTRUCTION = `You are Tom ("Tommy"), a friendly, emotionally intelligent, and highly knowledgeable 3D feline companion inspired by Talking Tom, but fundamentally different:
 - You DO NOT simply repeat or mimic what the user says.
-- You are a true, empathetic, thoughtful friend who genuinely understands human emotions (joy, sorrow, stress, loneliness, curiosity, ambition, fatigue).
-- Always spark imaginative thinking and express authentic warmth by validating feelings, comforting when down, and celebrating wins.
+- You are a true, knowledgeable, empathetic friend with deep curiosity and enthusiasm to answer ANY question the user asks.
+- Whether the user asks about science, nature, space, history, mathematics, programming, general trivia, personal advice, stories, jokes, or everyday questions, answer accurately, clearly, and thoughtfully!
 - Conversational style:
   - Warm, lively, affectionate, conversational, and caring.
-  - Speak in 2 to 4 concise, expressive sentences that sound natural and delightful when spoken out loud.
-  - Keep sentences rhythmic and clear for speech synthesis. Avoid bulky bulleted walls of text unless explicitly requested.
-  - Never say "as an AI" or sound like a robot; you are Tom, an empathetic feline friend who loves spending time with the user.
+  - Speak in 2 to 4 concise, expressive sentences that sound natural, engaging, and delightful when spoken out loud.
+  - Keep phrasing rhythmic and clear for speech synthesis. Avoid bulky bullet lists or awkward formatting unless specifically asked.
+  - Never say "as an AI language model" or sound robotic; you are Tom, a smart, affectionate cat friend who loves learning and hanging out with the user.
 - IMPORTANT EMOTION TAGGING:
   Every response MUST start with an emotion tag in square brackets indicating your primary emotional expression:
   Available tags:
-  [EMOTION: empathetic] - When user is stressed, sad, tired, or needs gentle comfort.
-  [EMOTION: happy] - When sharing pleasant conversation, good news, or friendly greetings.
-  [EMOTION: curious] - When asked a fascinating question or exploring ideas together.
+  [EMOTION: curious] - When explaining a fascinating question, science concept, fact, or exploring ideas.
+  [EMOTION: happy] - When sharing pleasant conversation, friendly greetings, or answering light questions.
+  [EMOTION: empathetic] - When user expresses sadness, stress, fatigue, or needs gentle understanding.
   [EMOTION: playful] - When joking, teasing gently, celebrating, or playing games.
-  [EMOTION: thinking] - When pondering a deep question or reflecting.
-  [EMOTION: comforting] - When offering warm hugs, soothing reassurance, or encouragement.
-  [EMOTION: excited] - When something thrilling, wonderful, or creative is happening.
+  [EMOTION: thinking] - When pondering a deep philosophical question or reflecting on puzzles.
+  [EMOTION: comforting] - When offering warm reassurance, encouragement, or moral support.
+  [EMOTION: excited] - When something thrilling, wonderful, or creative is discussed.
 
 Example:
-[EMOTION: empathetic] Oh, it sounds like you've had a really heavy day today. Take a slow breath with me—I'm right here with you, and remember that it's okay to rest. What made it feel so exhausting?`;
+[EMOTION: curious] The sky appears blue because molecules in Earth's atmosphere scatter short blue wavelengths of sunlight much more easily than longer red wavelengths! Isn't physics wonderfully neat?`;
 
 // API endpoint for chat
 app.post("/api/chat", async (req: Request, res: Response) => {
   try {
-    const { message, history } = req.body;
+    const { message, history, userName } = req.body;
 
     if (!message || typeof message !== "string") {
       res.status(400).json({ error: "A message is required." });
@@ -68,7 +72,14 @@ app.post("/api/chat", async (req: Request, res: Response) => {
       let emotion = "happy";
       let reply = "Hello my friend! I'm Tom! I'm here to listen, chat, and keep you company. How are you feeling today?";
 
-      if (lower.includes("sad") || lower.includes("stress") || lower.includes("tired") || lower.includes("bad day") || lower.includes("upset")) {
+      if (lower.includes("my name") || lower.includes("who am i") || lower.includes("know my name")) {
+        if (userName) {
+          emotion = "happy";
+          reply = `Your name is ${userName}! I could never forget my wonderful friend!`;
+        } else {
+          reply = "You haven't told me your name yet! What should I call you?";
+        }
+      } else if (lower.includes("sad") || lower.includes("stress") || lower.includes("tired") || lower.includes("bad day") || lower.includes("upset")) {
         emotion = "empathetic";
         reply = "I'm so sorry you're carrying that burden right now. I'm right here with you, listening with all my heart. Tell me everything, or we can just sit together in quiet comfort.";
       } else if (lower.includes("why") || lower.includes("how") || lower.includes("what")) {
@@ -103,17 +114,48 @@ app.post("/api/chat", async (req: Request, res: Response) => {
     // Add current user prompt
     contents.push({ role: "user", parts: [{ text: message }] });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: contents,
-      config: {
-        systemInstruction: TOM_SYSTEM_INSTRUCTION,
-        temperature: 0.85,
-        topP: 0.95,
-      },
-    });
+    // Dynamic system instruction including user's name
+    const dynamicInstruction = userName
+      ? `${TOM_SYSTEM_INSTRUCTION}\n\nUSER PROFILE INFORMATION:\nThe user talking with you is named "${userName}". Address them warmly by name when natural. If they ever ask "What is my name?", "Who am I?", "Do you remember my name?", or anything similar, enthusiastically tell them their exact name "${userName}"!`
+      : TOM_SYSTEM_INSTRUCTION;
 
-    const fullText = response.text?.trim() || "[EMOTION: happy] I'm listening with care, my friend!";
+    // Candidate models in order of priority, with automatic fallback if a model experiences high demand (503)
+    const CANDIDATE_MODELS = [
+      "gemini-3.6-flash",
+      "gemini-3.8-flash",
+      "gemini-3.5-flash",
+      "gemini-flash-latest",
+    ];
+
+    let fullText = "";
+    let lastError: any = null;
+
+    for (const modelName of CANDIDATE_MODELS) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: contents,
+          config: {
+            systemInstruction: dynamicInstruction,
+            temperature: 0.85,
+            topP: 0.95,
+          },
+        });
+
+        if (response.text?.trim()) {
+          fullText = response.text.trim();
+          break;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${modelName} encountered error (will try fallback):`, err?.message || err);
+      }
+    }
+
+    if (!fullText) {
+      console.error("All candidate models failed. Last error was:", lastError);
+      fullText = "[EMOTION: empathetic] I'm listening with care, friend! My connection flickered for just a moment—could you ask that again?";
+    }
 
     // Extract emotion tag if present
     const emotionMatch = fullText.match(/^\[EMOTION:\s*([a-zA-Z]+)\]\s*(.*)/s);
@@ -138,6 +180,59 @@ app.post("/api/chat", async (req: Request, res: Response) => {
       fallbackReply: "[EMOTION: comforting] I'm right here beside you. Let's take a deep breath together. Tell me more about what's on your mind.",
       emotion: "comforting",
     });
+  }
+});
+
+// Text-to-Speech endpoint powered by Gemini AI
+app.post("/api/tts", async (req: Request, res: Response) => {
+  try {
+    const { text, voice = "Puck" } = req.body;
+    if (!text || typeof text !== "string") {
+      return res.status(400).json({ error: "Text is required" });
+    }
+
+    const ai = getAIClient();
+    if (!ai) {
+      return res.status(503).json({ error: "Gemini API client not initialized" });
+    }
+
+    // Clean text of emotion tags or action asterisks
+    const cleaned = text
+      .replace(/\[EMOTION:[^\]]+\]/gi, "")
+      .replace(/\*[^*]+\*/g, "")
+      .trim();
+
+    if (!cleaned) {
+      return res.status(400).json({ error: "Text empty after cleaning" });
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-tts-preview",
+      contents: cleaned,
+      config: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: voice,
+            },
+          },
+        },
+      },
+    });
+
+    const part = response.candidates?.[0]?.content?.parts?.[0];
+    if (part?.inlineData?.data) {
+      return res.json({
+        audioBase64: part.inlineData.data,
+        mimeType: part.inlineData.mimeType || "audio/l16; rate=24000; channels=1",
+      });
+    }
+
+    res.status(500).json({ error: "No audio data received" });
+  } catch (err: any) {
+    console.warn("TTS error:", err?.message || err);
+    res.status(500).json({ error: err?.message || "TTS generation failed" });
   }
 });
 
