@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 340" width="100%" height="100%">
   <defs>
     <!-- Sun rays gradient -->
     <linearGradient id="sunGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -15,88 +15,65 @@
       <stop offset="0%" stop-color="#EE3124" />
       <stop offset="100%" stop-color="#C1272D" />
     </linearGradient>
-    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#F9CD54" />
-      <stop offset="100%" stop-color="#EDBA38" />
-    </linearGradient>
     <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="3" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
-  <g transform="translate(15, 10)">
-    <!-- Sunburst Radiant Rays -->
-    <g transform="translate(170, 160)">
-      <!-- Radiant spikes -->
-      <!-- 24 rays around center -->
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(15)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(30)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(45)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(60)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(75)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(90)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(105)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(120)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-15)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-30)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-45)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-60)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-75)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-90)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-105)" />
-      <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-120)" />
-      
-      <!-- Inner soft sun ring -->
-      <circle cx="0" cy="-10" r="108" fill="url(#sunHalo)" opacity="0.95" />
+  <!-- Sunburst Radiant Rays & Caring Hands Emblem -->
+  <g transform="translate(170, 160)">
+    <!-- Radiant spikes -->
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(15)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(30)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(45)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(60)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(75)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(90)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(105)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(120)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-15)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-30)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-45)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-60)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-75)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-90)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-105)" />
+    <path d="M 0,-145 L 12,-110 L -12,-110 Z" fill="url(#sunGrad)" transform="rotate(-120)" />
+    
+    <!-- Inner soft sun ring -->
+    <circle cx="0" cy="-10" r="108" fill="url(#sunHalo)" opacity="0.95" />
 
-      <!-- Center Red/Orange Sun Sphere -->
-      <circle cx="0" cy="-15" r="70" fill="url(#globeGrad)" />
+    <!-- Center Red/Orange Sun Sphere -->
+    <circle cx="0" cy="-15" r="70" fill="url(#globeGrad)" />
 
-      <!-- White Globe Wireframe Grid -->
-      <g stroke="#FFFFFF" stroke-width="2.5" fill="none" opacity="0.95" transform="translate(0, -15)">
-        <circle cx="0" cy="0" r="48" />
-        <!-- Equator & parallels -->
-        <line x1="-48" y1="0" x2="48" y2="0" />
-        <ellipse cx="0" cy="0" rx="48" ry="24" />
-        <!-- Meridians -->
-        <line x1="0" y1="-48" x2="0" y2="48" />
-        <ellipse cx="0" cy="0" rx="26" ry="48" />
-      </g>
-
-      <!-- Dynamic Green and Dark Blue Crescent Swooshes around globe -->
-      <path d="M -50, -5 C -30, 45 40, 50 65, 10 C 50, 40 -15, 38 -40, -5 Z" fill="#0D5C3A" />
-      <path d="M -68, -25 C -55, 60 30, 75 72, 35 C 20, 68 -45, 48 -58, -15 Z" fill="#1B264F" />
-
-      <!-- Two stylized cupping Caring Hands below -->
-      <g fill="#1B264F" transform="translate(0, 70)">
-        <!-- Left Hand -->
-        <path d="M -8, 20 C -25, 2 -55, -20 -105, -15 C -135, -12 -155, 5 -165, 20 C -150, 18 -125, 8 -95, 18 C -70, 26 -40, 42 -8, 48 Z" />
-        <path d="M -45, -5 C -80, -22 -125, -20 -155, -5 C -145, 5 -115, 5 -85, 10 C -60, 15 -35, 25 -20, 30 Z" opacity="0.9" />
-        <path d="M -15, 12 C -40, 0 -85, -2 -115, 12 C -95, 20 -60, 22 -35, 30 Z" />
-
-        <!-- Right Hand -->
-        <path d="M 8, 20 C 25, 2 55, -20 105, -15 C 135, -12 155, 5 165, 20 C 150, 18 125, 8 95, 18 C 70, 26 40, 42 8, 48 Z" />
-        <path d="M 45, -5 C 80, -22 125, -20 155, -5 C 145, 5 115, 5 85, 10 C 60, 15 35, 25 20, 30 Z" opacity="0.9" />
-        <path d="M 15, 12 C 40, 0 85, -2 115, 12 C 95, 20 60, 22 35, 30 Z" />
-      </g>
+    <!-- White Globe Wireframe Grid -->
+    <g stroke="#FFFFFF" stroke-width="2.5" fill="none" opacity="0.95" transform="translate(0, -15)">
+      <circle cx="0" cy="0" r="48" />
+      <!-- Equator & parallels -->
+      <line x1="-48" y1="0" x2="48" y2="0" />
+      <ellipse cx="0" cy="0" rx="48" ry="24" />
+      <!-- Meridians -->
+      <line x1="0" y1="-48" x2="0" y2="48" />
+      <ellipse cx="0" cy="0" rx="26" ry="48" />
     </g>
 
-    <!-- Typography Section on Right -->
-    <g transform="translate(370, 0)">
-      <!-- "NEW ERA" -->
-      <text x="0" y="145" font-family="'Times New Roman', 'Baskerville', 'Georgia', serif" font-size="108" font-weight="700" fill="#1B264F" letter-spacing="2">NEW ERA</text>
-      
-      <!-- "GLOBAL SCHOOL" -->
-      <text x="0" y="215" font-family="'Times New Roman', 'Baskerville', 'Georgia', serif" font-size="62" font-weight="700" fill="#C1272D" letter-spacing="3">GLOBAL SCHOOL</text>
+    <!-- Dynamic Green and Dark Blue Crescent Swooshes around globe -->
+    <path d="M -50, -5 C -30, 45 40, 50 65, 10 C 50, 40 -15, 38 -40, -5 Z" fill="#0D5C3A" />
+    <path d="M -68, -25 C -55, 60 30, 75 72, 35 C 20, 68 -45, 48 -58, -15 Z" fill="#1B264F" />
 
-      <!-- Yellow Ribbon Banner -->
-      <g transform="translate(0, 235)">
-        <!-- Polygon ribbon with diagonal cut on the right -->
-        <polygon points="0,0 470,0 450,44 0,44" fill="url(#ribbonGrad)" />
-        <text x="22" y="30" font-family="'Georgia', 'Times New Roman', serif" font-size="25" font-weight="600" font-style="italic" fill="#1B264F" letter-spacing="1.2">Curiosity  •  Creativity  •  Compassion</text>
-      </g>
+    <!-- Two stylized cupping Caring Hands below -->
+    <g fill="#1B264F" transform="translate(0, 70)">
+      <!-- Left Hand -->
+      <path d="M -8, 20 C -25, 2 -55, -20 -105, -15 C -135, -12 -155, 5 -165, 20 C -150, 18 -125, 8 -95, 18 C -70, 26 -40, 42 -8, 48 Z" />
+      <path d="M -45, -5 C -80, -22 -125, -20 -155, -5 C -145, 5 -115, 5 -85, 10 C -60, 15 -35, 25 -20, 30 Z" opacity="0.9" />
+      <path d="M -15, 12 C -40, 0 -85, -2 -115, 12 C -95, 20 -60, 22 -35, 30 Z" />
+
+      <!-- Right Hand -->
+      <path d="M 8, 20 C 25, 2 55, -20 105, -15 C 135, -12 155, 5 165, 20 C 150, 18 125, 8 95, 18 C 70, 26 40, 42 8, 48 Z" />
+      <path d="M 45, -5 C 80, -22 125, -20 155, -5 C 145, 5 115, 5 85, 10 C 60, 15 35, 25 20, 30 Z" opacity="0.9" />
+      <path d="M 15, 12 C 40, 0 85, -2 115, 12 C 95, 20 60, 22 35, 30 Z" />
     </g>
   </g>
 </svg>

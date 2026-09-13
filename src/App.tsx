@@ -157,17 +157,14 @@ export default function App() {
       {/* 2. Top Header with School Logo & Sound Toggle */}
       <header className="relative z-20 w-full pt-2 sm:pt-3 px-2 sm:px-4 flex items-center justify-between shrink-0">
         <div className="w-full max-w-xl mx-auto flex items-center justify-between px-1">
-          {/* School Brand Badge with Logo */}
-          <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl shadow-2xs border border-slate-200/80">
+          {/* Brand Logo Emblem */}
+          <div className="flex items-center bg-white/90 backdrop-blur-md px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl shadow-2xs border border-slate-200/80">
             <img
               src="/negs-logo.svg"
-              alt="New Era Global School Logo"
-              className="h-7 sm:h-8 md:h-9 w-auto max-w-[170px] sm:max-w-[240px] object-contain"
+              alt="Logo"
+              className="h-8 sm:h-9 md:h-10 w-auto aspect-square object-contain"
               referrerPolicy="no-referrer"
             />
-            <span className="hidden md:inline text-xs font-semibold text-slate-600 border-l border-slate-200 pl-2.5">
-              Curiosity • Creativity • Compassion
-            </span>
           </div>
 
           {/* Quick Sound Mute Toggle */}

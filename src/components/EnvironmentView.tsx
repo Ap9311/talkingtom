@@ -15,14 +15,6 @@ export const EnvironmentView: React.FC<EnvironmentViewProps> = ({ theme, blur = 
           {/* Radiant warm sunbeam lighting in the background */}
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[750px] aspect-square bg-gradient-radial from-amber-200/40 via-orange-100/20 to-transparent rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85vw] max-w-[650px] h-[220px] bg-blue-900/5 rounded-full blur-2xl pointer-events-none" />
-
-          {/* Gentle school accent watermarks in corners */}
-          <div className="hidden lg:block absolute bottom-4 left-6 opacity-30 text-xs font-semibold tracking-wider text-slate-500 uppercase">
-            New Era Global School
-          </div>
-          <div className="hidden lg:block absolute bottom-4 right-6 opacity-30 text-xs font-semibold tracking-wider text-amber-700">
-            Curiosity • Creativity • Compassion
-          </div>
         </div>
       )}
 
