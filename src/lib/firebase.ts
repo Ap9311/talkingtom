@@ -78,7 +78,7 @@ const LOCAL_PROFILE_KEY = "tom_user_profile_";
  */
 export async function saveUserProfileToFirestore(
   uid: string,
-  profileData: { displayName: string; photoURL: string; email?: string }
+  profileData: { displayName: string; photoURL: string }
 ): Promise<void> {
   // Always cache locally as well for instant offline-first reliability
   try {
@@ -90,14 +90,12 @@ export async function saveUserProfileToFirestore(
 
   try {
     const userDocRef = doc(db, "users", uid);
+    // Strictly saving only Name and Profile Picture (+ server timestamp)
     await setDoc(
       userDocRef,
       {
-        uid,
         displayName: profileData.displayName || "Friend",
         photoURL: profileData.photoURL || "",
-        email: profileData.email || "",
-        provider: "google",
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -172,12 +170,8 @@ export async function signInWithGoogle(): Promise<UserProfile> {
     localStorage.setItem("tom_cached_auth_user", JSON.stringify(profile));
   } catch {}
 
-  // Save user profile including name and verified email (background sync so sign-in is instant)
-  saveUserProfileToFirestore(user.uid, {
-    displayName,
-    photoURL,
-    email: user.email || "",
-  }).catch((e) => {
+  // Save strictly only Name and profile picture (background sync so sign-in is instant)
+  saveUserProfileToFirestore(user.uid, { displayName, photoURL }).catch((e) => {
     console.warn("Background Firestore sync note:", e);
   });
 

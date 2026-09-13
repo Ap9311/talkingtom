@@ -7,13 +7,10 @@ import { AuthScreen } from './components/AuthScreen';
 import { ProfileDrawer } from './components/ProfileDrawer';
 import { audioEngine } from './utils/audioEngine';
 import { EmotionType, VoiceSettings, EnvironmentTheme, UserProfile } from './types';
-import { auth, loadUserProfileFromFirestore, saveUserProfileToFirestore } from './lib/firebase';
+import { auth, loadUserProfileFromFirestore } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Volume2, VolumeX, Clock, AlertCircle } from 'lucide-react';
 import { PWAInstallButton } from './components/PWAInstallButton';
-import { AdminPage } from './components/AdminPage';
-import { recordVisitorDevicePresence } from './utils/deviceFingerprint';
-import { isAdminUser } from './utils/adminData';
 
 // Helper to restore cached profile on frame 0 (zero load delay)
 const getInitialCachedProfile = (): UserProfile | null => {
@@ -42,70 +39,6 @@ export default function App() {
   const [guestSecondsLeft, setGuestSecondsLeft] = useState<number>(120);
   const [guestExpiredNotice, setGuestExpiredNotice] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
-
-  // Administrative route state: /admin or #admin
-  const [isAdminRoute, setIsAdminRoute] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const isTarget =
-      window.location.pathname.startsWith('/admin') ||
-      window.location.hash.startsWith('#admin');
-    if (!isTarget) return false;
-    
-    // Check if initial cached profile is authorized admin
-    const cached = getInitialCachedProfile();
-    if (cached?.email && isAdminUser(cached.email)) {
-      return true;
-    }
-
-    // Immediately redirect non-admin visitors to main screen
-    try {
-      window.history.replaceState({}, '', '/');
-    } catch {}
-    return false;
-  });
-
-  // Track browser history changes for route switching with strict admin guard
-  useEffect(() => {
-    const handleLocationChange = () => {
-      const isTarget =
-        window.location.pathname.startsWith('/admin') ||
-        window.location.hash.startsWith('#admin');
-
-      if (isTarget) {
-        // If current user is not the verified admin, silently redirect to /
-        if (!isAdminUser(userProfile?.email)) {
-          window.history.replaceState({}, '', '/');
-          setIsAdminRoute(false);
-          return;
-        }
-        setIsAdminRoute(true);
-      } else {
-        setIsAdminRoute(false);
-      }
-    };
-
-    window.addEventListener('popstate', handleLocationChange);
-    window.addEventListener('hashchange', handleLocationChange);
-    return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-      window.removeEventListener('hashchange', handleLocationChange);
-    };
-  }, [userProfile]);
-
-  // Guard against any unauthorized access when user state resolves
-  useEffect(() => {
-    if (isAdminRoute && !authLoading) {
-      if (!isAdminUser(userProfile?.email)) {
-        window.history.replaceState({}, '', '/');
-        setIsAdminRoute(false);
-      }
-    }
-  }, [isAdminRoute, authLoading, userProfile]);
-
-  // Record visitor presence quietly in background for real total user counts
-  useEffect(() => {
-    recordVisitorDevicePresence();
-  }, []);
 
   // Lightweight conversation history for AI context memory without any text chat display
   const conversationHistoryRef = useRef<{ sender: string; text: string }[]>([]);
@@ -143,13 +76,6 @@ export default function App() {
         setUserProfile((prev) => prev || immediateProfile);
         setGuestMode(false);
         setAuthLoading(false);
-
-        // Sync verified email and profile to Firestore for real admin metrics
-        saveUserProfileToFirestore(firebaseUser.uid, {
-          displayName: firebaseUser.displayName || 'Friend',
-          photoURL: firebaseUser.photoURL || fallbackPhoto,
-          email: firebaseUser.email || '',
-        }).catch(() => {});
 
         // Background sync for any custom saved profile without blocking the UI
         loadUserProfileFromFirestore(firebaseUser.uid)
@@ -379,17 +305,6 @@ export default function App() {
       audioEngine.stopSpeechRecognition();
     };
   }, []);
-
-  if (isAdminRoute && isAdminUser(userProfile?.email)) {
-    return (
-      <AdminPage
-        onBackToApp={() => {
-          window.history.replaceState({}, '', '/');
-          setIsAdminRoute(false);
-        }}
-      />
-    );
-  }
 
   return (
     <main className="fixed inset-0 w-full h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-100 flex flex-col justify-between font-sans select-none">

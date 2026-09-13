@@ -10,12 +10,10 @@ import {
   Sparkles,
   Save,
   MessageCircle,
-  ShieldCheck,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { AVATAR_PRESETS } from '../utils/avatarPresets';
 import { auth, updateUserProfile, signOutUser, formatAuthError } from '../lib/firebase';
-import { ADMIN_EMAIL } from '../utils/adminData';
 
 interface ProfileDrawerProps {
   isOpen: boolean;
@@ -372,22 +370,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
             </div>
 
             {/* Drawer Footer with Sign Out */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
-              {userProfile?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    window.history.pushState({}, '', '/admin');
-                    window.dispatchEvent(new PopStateEvent('popstate'));
-                  }}
-                  className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Open Admin Analytics Portal</span>
-                </button>
-              )}
-
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50">
               <button
                 type="button"
                 onClick={handleSignOutClick}
